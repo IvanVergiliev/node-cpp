@@ -141,6 +141,7 @@ exports.sort = sort;
 using namespace v8;
 
 Handle<Value> Sort(const Arguments& args) {
+  HandleScope scope;
   return Undefined();
 }
 
@@ -149,8 +150,7 @@ void Init(Handle<Object> exports) {
       FunctionTemplate::New(Sort)->GetFunction());
 }
 
-NODE_MODULE(algortihm, Init)
-	</textarea>
+NODE_MODULE(algortihm, Init)</textarea>
 </section>
 
 <section class="slide">
@@ -211,26 +211,95 @@ NODE_MODULE(algortihm, Init)
 	<h2>Going async</h2>
 	<ul>
 		<li>Enter <strong>uv_queue_work</strong></li>
-			<textarea class="code">int uv_queue_work(
-      uv_loop_t* loop,
-      uv_work_t* req,
-      uv_work_cb work_cb,
-      uv_after_work_cb after_work_cb);</textarea>
+		<textarea class="code">int uv_queue_work(
+    uv_loop_t* loop,
+    uv_work_t* req,
+    uv_work_cb work_cb,
+    uv_after_work_cb after_work_cb);</textarea>
 	</ul>
 </section>
 
 <section class="slide">
-	<h2>Why should you avoid native extensions?</h2>
-	<ul><li>You hate C++ (I guess?)</li></ul>
+	<h2>Async Sort</h2>
+  <textarea class="code">struct AsyncSortData {
+  vector<double> v;
+  Persistent<Function> callback;
+
+  ~AsyncSortData() {
+    callback.Dispose();
+  }
+};
+
+Handle<Value> AsyncSort(const Arguments& args) {
+  ...
+  uv_work_t* req = new uv_work_t;
+  AsyncSortData* data = new AsyncSortData;
+  req->data = data;
+  for (int i = 0; i < arr->Length(); ++i) {
+    data->v.push_back(arr->Get(i)->NumberValue());
+  }
+  data->callback = Persistent<Function>::New(Local<Function>::Cast(args[1]));
+  uv_queue_work(uv_default_loop(), req, sort, afterSort);
+  return Undefined();
+}</textarea>
 </section>
 
 <section class="slide">
-	<h2>When is it justified to avoid them?</h2>
+	<h2>Async Sort</h2>
+	<textarea class="code">void sort(uv_work_t* req) {
+  auto data = reinterpret_cast<AsyncSortData*>(req->data);
+  sort(data->v.begin(), data->v.end());
+};
+
+void afterSort(uv_work_t* req) {
+  HandleScope scope;
+  auto data = reinterpret_cast<AsyncSortData*>(req->data);
+  Handle<Array> res = Array::New(data->v.size());
+  for (int i = 0; i < data->v.size(); ++i) {
+    res->Set(i, Number::New(data->v[i]));
+  }
+  data->callback->Call(res, 1, (Handle<Value>[]){res});
+  delete data;
+  delete req;
+}</textarea>
+</section>
+
+<section class="slide">
+	<h2>Reasons to avoid native extensions?</h2>
+	<ul>
+		<li class="slide">
+			Bad for portability
+			<ul><li>C++ is not as portable as advertised</li></ul>
+		</li>
+		<li class="slide">
+			Harder to maintain
+			<ul>
+				<li>Adds one more language to the codebase</li>
+				<li>It's ugly</li>
+			</ul>
+		</li>
+		<li class="slide">You hate C++ (just guessing)</li>
+	</ul>
+</section>
+
+<section class="slide">
+	<h2>When to avoid going the C++ way</h2>
+	<ul>
+		<li>When you don't have to (duh!)</li>
+		<li>IO-bound code</li>
+		<li>Huge number of small function calls</li>
+	</ul>
 </section>
 
 <section class="slide">
 	<h2>References</h2>
-	// Maybe a screenshort from the v8 documentation on izs.me
+	<ul>
+		<li><a href="http://nodejs.org/api/addons.html">NodeJS Docs - Addons</a></li>
+		<li><a href="https://developers.google.com/v8/embed">V8 Embedder's Guide</a></li>
+		<li><a href="http://izs.me/v8-docs/classv8_1_1Object.html#aa588c4de7f0e4db47a2f22acfaa774fd">V8 generated docs</a></li>
+		<li><a href="https://github.com/TooTallNate/node-gyp/wiki/%22binding.gyp%22-files-out-in-the-wild">Existing native modules</a></li>
+		<li><a href="http://code.google.com/p/v8/source/browse#svn%2Ftrunk%2Fsrc">V8 Source Code</a></li>
+	</ul>
 </section>
 
 

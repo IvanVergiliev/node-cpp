@@ -49,7 +49,7 @@ Handle<Value> AsyncSort(const Arguments& args) {
   }
   data->callback = Persistent<Function>::New(Local<Function>::Cast(args[1]));
   uv_queue_work(uv_default_loop(), req, sort, afterSort);
-  return True();
+  return Undefined();
 }
 
 void Init(Handle<Object> exports) {
