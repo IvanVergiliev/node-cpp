@@ -8,17 +8,6 @@
 using namespace std;
 using namespace v8;
 
-struct Timer {
-  clock_t start;
-  string message;
-  Timer(const string& message): message(message) {
-    start = clock();
-  }
-  ~Timer() {
-    printf("%s: %lf\n", message.c_str(), (clock() - start) / double(CLOCKS_PER_SEC));
-  }
-};
-
 struct AsyncSortData {
   vector<double> v;
   Persistent<Function> callback;
@@ -30,20 +19,15 @@ struct AsyncSortData {
 
 void sort(uv_work_t* req) {
   auto data = reinterpret_cast<AsyncSortData*>(req->data);
-  clock_t start = clock();
   sort(data->v.begin(), data->v.end());
-  printf("sorting took %lf\n", (clock() - start) / double(CLOCKS_PER_SEC));
 };
 
 void afterSort(uv_work_t* req) {
   HandleScope scope;
   auto data = reinterpret_cast<AsyncSortData*>(req->data);
   Handle<Array> res = Array::New(data->v.size());
-  {
-    Timer t("after sort");
-    for (int i = 0; i < data->v.size(); ++i) {
-      res->Set(i, Number::New(data->v[i]));
-    }
+  for (int i = 0; i < data->v.size(); ++i) {
+    res->Set(i, Number::New(data->v[i]));
   }
   data->callback->Call(res, 1, (Handle<Value>[]){res});
   delete data;
@@ -65,10 +49,6 @@ Handle<Value> AsyncSort(const Arguments& args) {
   }
   data->callback = Persistent<Function>::New(Local<Function>::Cast(args[1]));
   uv_queue_work(uv_default_loop(), req, sort, afterSort);
-//  sort(v.begin(), v.end());
-//  for (int i = 0; i < arr->Length(); ++i) {
-//    arr->Set(i, Number::New(v[i]));
-//  }
   return True();
 }
 

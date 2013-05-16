@@ -209,7 +209,14 @@ NODE_MODULE(algortihm, Init)
 
 <section class="slide">
 	<h2>Going async</h2>
-	// Code using uv_queue_work - add soon
+	<ul>
+		<li>Enter <strong>uv_queue_work</strong></li>
+			<textarea class="code">int uv_queue_work(
+      uv_loop_t* loop,
+      uv_work_t* req,
+      uv_work_cb work_cb,
+      uv_after_work_cb after_work_cb);</textarea>
+	</ul>
 </section>
 
 <section class="slide">
