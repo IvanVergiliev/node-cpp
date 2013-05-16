@@ -1,5 +1,5 @@
 var algo = require('./build/Release/algorithm');
-var a = require('./utils').randomArray(10000000);
+var a = require('./utils').randomArray(1000000);
 
 console.time('sort');
 algo.sort(a);

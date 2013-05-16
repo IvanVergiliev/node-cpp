@@ -24,6 +24,9 @@
 	
 	<!-- Transition theme. More available in /themes/transition/ or create your own. -->
 	<link rel="stylesheet" href="themes/transition/horizontal-slide.css">
+
+	<link rel="stylesheet" href="extensions/codemirror/deck.codemirror.css">
+	<link rel="stylesheet" href="extensions/codemirror/themes/default.css">
 	
 	<!-- Required Modernizr file -->
 	<script src="modernizr.custom.js"></script>
@@ -45,13 +48,13 @@
 <section class="slide" id="brag">
   <h2>Ivan Vergiliev</h2>
   <ul>
-    <li class="slide" id="twitter">
+    <li>
       <h3><a href="https://twitter.com/IvanVergiliev">@IvanVergiliev</a></h3>
     </li>
-    <li class="slide" id="employment">
+    <li>
     	<h3>Currently helping Chaos Group build a cloud rendering platform</h3>
     </li>
-    <li class="slide" id="competitions">
+    <li>
       <h3>Competitive programming enthusiast</h3>
       <ul>
       	<li class="slide" id="talk-performant-to-me">So, we'll talk about performance</li>
@@ -64,8 +67,163 @@
   </ul>
 </section>
 
+<section class="slide" id="v8-the-good-and-the-bad">
+	<h2>So, you need more speed?</h2>
+	<ul>
+		<li>
+			<h3>V8 is really fast</h3>
+			<ul>
+				<li>Probably the fastest JavaScript engine nowadays</li>
+			</ul>
+		</li>
+		<li>
+			<h3>but it can also be kinda slow</h3>
+			<ul>
+				<li>The fastest <strong>JavaScript</strong> engine</li>
+				<li>Abstractions, GC, dynamic typing, etc. all come at a price</li>
+			</ul>
+		</li>
+		<li>
+			<h3>We'll assume that, for some reason, our users need a way to sort a large amount of numbers</h3>
+		</li>
+	</ul>
+</section>
+
 <section class="slide">
-	<h1>Here</h1>
+	<h2>How should we do that?</h2>
+	<ul>
+		<li>
+			<div>
+				<textarea id="code" class="code" name="code" mode="javascript" style="display: none;" readonly>var a = [];
+for (var i = 0; i &lt; 1000000; ++i) {
+  a[i] = Math.random()
+}
+console.time('sort');
+a.sort();
+console.timeEnd('sort');
+				</textarea>
+			</div>
+		</li>
+		<li>
+			In-browser - about 12 seconds
+		</li>
+		<li>
+			node.js - make it 10s
+		</li>
+		<li class="slide">
+			C++ - 0.8 seconds
+			<ul>
+				<li>before optimizations</li>
+			</ul>
+		</li>
+	</ul>
+</section>
+
+<section class="slide">
+	<h1>Call C++ from Javascript!</h1>
+</section>
+
+<section class="slide" id="js-module">
+	<h2>A typical CommonJS module</h2>
+	<textarea class="code" mode="javascript" style="display: none;">var sort = function (arr) {
+  return arr.sort(); // yeah, cuz that makes sense...
+}
+
+exports.sort = sort;
+	</textarea>
+</section>
+
+<section class="slide">
+	<h2>A basic C++ extension module</h2>
+	<textarea class="code" style="display: none;">#include <node.h>
+#include <v8.h>
+
+using namespace v8;
+
+Handle<Value> Sort(const Arguments& args) {
+  return Undefined();
+}
+
+void Init(Handle<Object> exports) {
+  exports->Set(String::NewSymbol("sort"),
+      FunctionTemplate::New(Sort)->GetFunction());
+}
+
+NODE_MODULE(algortihm, Init)
+	</textarea>
+</section>
+
+<section class="slide">
+	<h2>Build with node-gyp</h2>
+	<ul>
+		<li>npm install -g node-gyp</li>
+		<li>
+			binding.gyp:
+			<textarea class="code">{
+  'targets': [{
+    'target_name': 'algorithm', # must be the same as the one in INIT_MODULE
+    'sources': [ 'module.cc' ]
+  }]
+}
+		</textarea>
+		</li>
+		<li>node-gyp configure build</li>
+		<li>results are by default in build/Release/algorithm.node</li>
+	</ul>
+</section>
+
+<section class="slide">
+	<h2>The sort function</h2>
+	<textarea class="code">Handle<Value> Sort(const Arguments& args) {
+  HandleScope scope;
+  if (args.Length() < 1 || !args[0]->IsArray()) {
+    ThrowException(Exception::TypeError(String::New("First argument should be an array")));
+    return Undefined();
+  }
+  Handle<Array> arr = Handle<Array>::Cast(args[0]);
+  vector<double> v;
+  for (int i = 0; i < arr->Length(); ++i) {
+    v.push_back(arr->Get(i)->NumberValue());
+  }
+  sort(v.begin(), v.end());
+  Handle<Array> res = Array::New(v.size());
+  for (int i = 0; i < v.size(); ++i) {
+    res->Set(i, Number::New(v[i]));
+  }
+  return scope.Close(res);
+}</textarea>
+<ul class="slide">
+	<li>runs in less than a second - that's much better</li>
+</ul>
+</section>
+
+<section class="slide">
+	<h2>Are we done?</h2>
+	<ul>
+		<li class="slide">Would you run this in production?</li>
+		<ul class="slide"><li>I hope not.</li></ul>
+		<li class="slide">All JavaScript runs in a single thread, using an event loop managed by <strong>libuv</strong></li>
+		<li class="slide">Our Sort function is not very asynchronous.</li>
+	</ul>
+</section>
+
+<section class="slide">
+	<h2>Going async</h2>
+	// Code using uv_queue_work - add soon
+</section>
+
+<section class="slide">
+	<h2>Why should you avoid native extensions?</h2>
+	<ul><li>You hate C++ (I guess?)</li></ul>
+</section>
+
+<section class="slide">
+	<h2>When is it justified to avoid them?</h2>
+</section>
+
+<section class="slide">
+	<h2>References</h2>
+	// Maybe a screenshort from the v8 documentation on izs.me
 </section>
 
 
@@ -110,6 +268,18 @@
 <script src="extensions/status/deck.status.js"></script>
 <script src="extensions/navigation/deck.navigation.js"></script>
 <script src="extensions/scale/deck.scale.js"></script>
+
+<!-- Base codemiror code -->
+<script src="extensions/codemirror/codemirror.js"></script>
+
+<!-- Syntax highlighting Modes -->
+
+<!-- javascript -->
+<script src="extensions/codemirror/mode/javascript/javascript.js"></script>
+<script src="extensions/codemirror/mode/clike/clike.js"></script>
+
+<!-- Plugin code -->
+<script src="extensions/codemirror/deck.codemirror.js"></script>
 
 <!-- Initialize the deck. You can put this in an external file if desired. -->
 <script>

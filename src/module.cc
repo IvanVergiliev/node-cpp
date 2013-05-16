@@ -8,15 +8,6 @@
 using namespace std;
 using namespace v8;
 
-struct Timer {
-  clock_t start;
-  string message;
-  Timer(const string& message): start(clock()), message(message) {}
-  ~Timer() {
-    printf("%s: %lf\n", message.c_str(), (clock() - start) / double(CLOCKS_PER_SEC));
-  }
-};
-
 Handle<Value> Sort(const Arguments& args) {
   HandleScope scope;
   if (args.Length() < 1 || !args[0]->IsArray()) {
@@ -33,9 +24,6 @@ Handle<Value> Sort(const Arguments& args) {
   for (int i = 0; i < v.size(); ++i) {
     res->Set(i, Number::New(v[i]));
   }
-//    for (int i = 0; i < arr->Length(); ++i) {
-//      arr->Set(i, Number::New(v[i]));
-//    }
   return scope.Close(res);
 }
 
@@ -43,4 +31,4 @@ void Init(Handle<Object> exports) {
   exports->Set(String::NewSymbol("sort"), FunctionTemplate::New(Sort)->GetFunction());
 }
 
-NODE_MODULE(algorithm, Init);
+NODE_MODULE(algorithm, Init)

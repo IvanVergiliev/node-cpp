@@ -1,5 +1,0 @@
-#include <thread>
-
-int main() {
-  
-}
