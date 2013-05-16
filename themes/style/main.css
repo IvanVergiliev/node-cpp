@@ -1,0 +1,16 @@
+.logo .cpplogo {
+	font-size: 90px;
+	margin-top: 15px;
+	margin-left: 10px;
+	font-family: "Comic-Sans";
+	font-weight: bold;
+	color: #78b634;
+}
+
+.logo * {
+	float: right;
+}
+
+.slide .logo {
+	margin-top: 20px;
+}
