@@ -18,4 +18,5 @@
 .csstransforms.boxshadow .deck-container .slide pre:before, .csstransforms.boxshadow .deck-container .slide pre:after {
 	-webkit-box-shadow: none;
 	box-shadow: none;
+	display: none;
 }
